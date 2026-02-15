@@ -7,6 +7,6 @@ struct Triangle {
 };
 
 struct Mesh {
-    struct Vector3 pointList[3];
+    struct Vector3 vertexList[3];
     struct Triangle triangles[1];
 };
