@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <debug.h>
 #include <math.h>
 #include <stdbool.h>
 
@@ -119,7 +119,7 @@ int main() {
 
     // print screen
     char* outputStr = output(&screenData);
-    printf("%s", outputStr);
+    dbg_printf("%s", outputStr);
 
     return 0;
 }
