@@ -5,7 +5,7 @@
 #include "mesh.h"
 #include "screendata.h"
 
-// looks down z
+// looks down +z
 // position is 0, 0, 0
 // aspectRatio is x/y, fov measures x angle
 struct Camera {
@@ -50,21 +50,12 @@ int main() {
                 1 - (vertex->y / (maxCoords.y * 2) + 0.5) // higher Y = lower pixel row
             };
 
-            // if out of screen, continue
-            // ! TEMP
-            if (
-                normalCoords.x < 0 || normalCoords.x > 1 ||
-                normalCoords.y < 0 || normalCoords.y > 1
-            ) { continue; }
-
             // find the integer pixel coordinates on screen
-            // !!! THESE ARENT INTS ANYMORE !!!
+            // !!! THESE ARENT INTS ANYMORE !!! this seems bad
             struct Vector2 screenCoords = {
                 normalCoords.x * SCREEN_WIDTH,
                 normalCoords.y * SCREEN_HEIGHT
             };
-
-            // save integer pixel coordinates
             screenVertices[j] = screenCoords;
         }
 
@@ -97,17 +88,31 @@ int main() {
         for (int x = boxMin.x; x <= boxMax.x; x++) {
             for (int y = boxMin.y; y <= boxMax.y; y++) {
                 struct Vector2 currCoords = {x, y};
-                // calculate cross product with each edge vector
+
+                // calculate barycentric areas
                 bool withinTriangle = true;
+                float bary[3];
                 for (int j = 0; j < 3; j++) {
                     struct Vector2* edgeVector = &edgeVectors[j];
                     struct Vector2 currVector = subV2(&currCoords, &screenVertices[j]);
                     float cross = crossV2(&currVector, edgeVector);
-                    // printf("(%f, %f), (%f, %f), %f\n", currVector.x, currVector.y, edgeVector->x, edgeVector->y, cross);
                     if (cross < 0) { withinTriangle = false; }
+                    bary[j] = cross;
                 }
                 if (!withinTriangle) { continue; }
-                write(&screenData, x, y);
+
+                // normalize barycentric coords
+                float sum = bary[0] + bary[1] + bary[2];
+                for (int j = 0; j < 3; j++) { bary[j] /= sum; }
+
+                // funny "shading"
+                int maxBary = 0;
+                for (int j = 1; j < 3; j++) {
+                    if (bary[j] > bary[maxBary]) { maxBary = j; }
+                }
+                if (maxBary == 0) { write(&screenData, x, y, 0xFF0000); }
+                else if (maxBary == 1) { write(&screenData, x, y, 0x00FF00); }
+                else { write(&screenData, x, y, 0x0000FF); }
             }
         }
     }
