@@ -1,17 +1,5 @@
-# SRC = main.c
-# EXE = main
-# LIB = -lm
-
-# OBJ = $(SRC:.c=.o)
-
-# main:
-# 	gcc $(SRC) -o $(EXE) $(LIB)
-
-# clean:
-# 	rm -f $(OBJ) $(EXE)
-
 # ----------------------------
-# Makefile Options
+# CEdev Options
 # ----------------------------
 
 NAME = TIGotchi
@@ -25,8 +13,20 @@ CXXFLAGS = -Wall -Wextra -Oz
 # modified settings
 ARCHIVED = YES # stores in archive instead of ram
 PREFER_OS_CRT = NO # might make program a little smaller
-HAS_PRINTF = NO # -8 kb program size
+# HAS_PRINTF = NO # -8 kb program size # ! OMG THIS LINE IS THE DEVIL
 
+# ----------------------------
+# CEdev Build
 # ----------------------------
 
 include $(shell cedev-config --makefile)
+
+# ----------------------------
+# Laptop Build
+# ----------------------------
+
+laptop:
+	gcc src/main.c -o main -lm
+
+laptop-clean:
+	rm -f main
