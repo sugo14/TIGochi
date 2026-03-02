@@ -1,31 +1,43 @@
 #include <stdlib.h>
 
-// #define SCREEN_WIDTH 320
-// #define SCREEN_HEIGHT 240
-#define SCREEN_WIDTH 60
-#define SCREEN_HEIGHT 15
+// for text
+// #define SCREEN_WIDTH 60
+// #define SCREEN_HEIGHT 15
+#define SCREEN_WIDTH LCD_WIDTH
+#define SCREEN_HEIGHT LCD_HEIGHT
 
 struct ScreenData {
-    int screen[SCREEN_WIDTH][SCREEN_HEIGHT];
+    // int screen[SCREEN_WIDTH][SCREEN_HEIGHT];
 };
 
 void write(struct ScreenData* screenData, int x, int y, int val) {
-    screenData->screen[x][y] = val;
+    uint16_t* lcd_Ram_i = (uint16_t*)lcd_Ram;
+    lcd_Ram_i += (y * SCREEN_WIDTH + x);
+    *lcd_Ram_i = 0x1;
 }
 
-char* output(struct ScreenData* screenData) {
-    char* result = (char*)malloc((SCREEN_HEIGHT * (SCREEN_WIDTH + 1) + 1) * sizeof(char));
-    for (int y = 0; y < SCREEN_HEIGHT; y++) {
-        for (int x = 0; x < SCREEN_WIDTH; x++) {
-            int pixel = screenData->screen[x][y];
-            char c = '#';
-            if (pixel == 0xFF0000) { c = '&'; }
-            else if (pixel == 0x00FF00) { c = '$'; }
-            else if (pixel == 0x0000FF) { c = '@'; }
-            result[y * (SCREEN_WIDTH + 1) + x] = pixel ? c : '.';
-        }
-        result[y * (SCREEN_WIDTH + 1) + SCREEN_WIDTH] = '\n';
+void fill_row(struct ScreenData* screenData, int x, int y, int amt, int val) {
+    uint16_t* lcd_Ram_i = (uint16_t*)lcd_Ram;
+    lcd_Ram_i += (y * SCREEN_WIDTH + x);
+    for (int i = 0; i < amt; i++) {
+        *lcd_Ram_i = 0x1;
+        lcd_Ram_i++;
     }
-    result[SCREEN_HEIGHT * (SCREEN_WIDTH + 1)] = '\0';
-    return result;
 }
+
+// char* output(struct ScreenData* screenData) {
+//     char* result = (char*)malloc((SCREEN_HEIGHT * (SCREEN_WIDTH + 1) + 1) * sizeof(char));
+//     for (int y = 0; y < SCREEN_HEIGHT; y++) {
+//         for (int x = 0; x < SCREEN_WIDTH; x++) {
+//             int pixel = screenData->screen[x][y];
+//             char c = '#';
+//             if (pixel == 0xFF0000) { c = '&'; }
+//             else if (pixel == 0x00FF00) { c = '$'; }
+//             else if (pixel == 0x0000FF) { c = '@'; }
+//             result[y * (SCREEN_WIDTH + 1) + x] = pixel ? c : '.';
+//         }
+//         result[y * (SCREEN_WIDTH + 1) + SCREEN_WIDTH] = '\n';
+//     }
+//     result[SCREEN_HEIGHT * (SCREEN_WIDTH + 1)] = '\0';
+//     return result;
+// }
