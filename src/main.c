@@ -1,5 +1,4 @@
-#include <debug.h>
-#include <math.h> // ! check if i need this
+#include <math.h>    // ! check if i need this
 #include <stdbool.h> // ! check if i need this
 
 // ! TEMP: printing to screen test
@@ -15,6 +14,18 @@
 
 #define swap(a, b, T) T tmp = a; a = b; b = tmp
 
+#define float_bitshift 12
+#define to_float(a) ((a) << float_bitshift)
+#define to_int(a) ((a) >> float_bitshift)
+
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+
+/* Fill the screen with a given color */
+void FillScreen(uint8_t color)
+{
+    memset(lcd_Ram, color, LCD_SIZE);
+}
+
 // looks down +z
 // position is 0, 0, 0
 // aspectRatio is x/y, fov measures x angle
@@ -29,35 +40,57 @@ struct Camera camera = {
 };
 struct ScreenData screenData = {0};
 struct Mesh mesh = {
-    {
-        {1, 1, 5},
-        {-1, 1, 5},
-        {-1, -1, 5}
-    },
-    {
-        {0, 1, 2}
-    }
+	{
+		{1.000000, -1.000000, -1.000000},
+		{1.000000, -1.000000, 1.000000},
+		{-1.000000, -1.000000, 1.000000},
+		{-1.000000, -1.000000, -1.000000},
+		{1.000000, 1.000000, -1.000000},
+		{1.000000, 1.000000, 1.000000},
+		{-1.000000, 1.000000, 1.000000},
+		{-1.000000, 1.000000, -1.000000},
+	},
+	{
+		{1, 2, 3},
+		{7, 6, 5},
+		{4, 5, 1},
+		{5, 6, 2},
+		{2, 6, 7},
+		{0, 3, 7},
+		{0, 1, 3},
+		{4, 7, 5},
+		{0, 4, 1},
+		{1, 5, 2},
+		{3, 2, 7},
+		{4, 0, 7},
+	}
 };
 
 int main() {
-    for (int i = 0; i < 1; i++) {
+    FillScreen(0x00);
+
+    float tanHalfFOV = tan(camera.halfFOV);
+    float tanHalfFOVy = tan(camera.halfFOV / camera.aspectRatio);
+    
+    for (int i = 0; i < 12; i++) {
         struct Triangle* triangle = &mesh.triangles[i];
 
         // find vertex screen coordinates
         struct Vector2Int screenVertices[3];
         for (int j = 0; j < 3; j++) {
-            struct Vector3* vertex = &mesh.vertexList[triangle->vertexIndices[j]];
+            struct Vector3 vertex = mesh.vertexList[triangle->vertexIndices[j]];
+            vertex.z += 5; // !!! TEMP
 
             // find plane of vertex
             struct Vector2 maxCoords = {
-                tan(camera.halfFOV) * vertex->z,
-                tan(camera.halfFOV / camera.aspectRatio) * vertex->z
+                tanHalfFOV * vertex.z,
+                tanHalfFOVy * vertex.z
             };
 
             // normalize position of vertex on screen (0 to 1)
             struct Vector2 normalCoords = {
-                vertex->x / (maxCoords.x * 2) + 0.5,
-                1 - (vertex->y / (maxCoords.y * 2) + 0.5) // higher Y = lower pixel row
+                vertex.x / (maxCoords.x * 2) + 0.5,
+                1 - (vertex.y / (maxCoords.y * 2) + 0.5) // higher Y = lower pixel row
             };
 
             // find the integer pixel coordinates on screen
@@ -132,59 +165,81 @@ int main() {
         // ------ SCANLINE RASTERIZATION ------ //
 
         // // sort vertices from top to bottom
-        // if (screenVertices[2].y > screenVertices[1].y) {
-        //     swap(screenVertices[1], screenVertices[2], struct Vector2Int);
-        // }
-        // if (screenVertices[1].y > screenVertices[0].y) {
-        //     swap(screenVertices[0], screenVertices[1], struct Vector2Int);
-        // }
-        // if (screenVertices[2].y > screenVertices[1].y) {
-        //     swap(screenVertices[1], screenVertices[2], struct Vector2Int);
+        // struct Vector2Int v0 = screenVertices[0];
+        // struct Vector2Int v1 = screenVertices[1];
+        // struct Vector2Int v2 = screenVertices[2];
+        // if (v2.y < v1.y) { swap(v1, v2, struct Vector2Int); }
+        // if (v1.y < v0.y) { swap(v0, v1, struct Vector2Int); }
+        // if (v2.y < v1.y) { swap(v1, v2, struct Vector2Int); }
+
+        // // long edge x and inv slope
+        // unsigned int xl_f = to_float(v0.x);
+        // unsigned int dxdyl_f = to_float(v2.x - v0.x) / (v2.y - v0.y);
+
+        // // top short edge x and inv slope
+        // unsigned int xs_f = to_float(v0.x);
+        // unsigned int dxdys_f = to_float(v1.x - v0.x) / (v1.y - v0.y);
+
+        // // down the long edge and top short edge
+        // for (unsigned int y = v0.y; y <= v1.y; y++) {
+        //     unsigned int xl = to_int(xl_f);
+        //     unsigned int xs = to_int(xs_f);
+
+        //     if (xl > xs) { swap(xl, xs, int); }
+        //     fill_row(&screenData, xl, y, xs - xl + 1, 0x77);
+
+        //     xl_f += dxdyl_f;
+        //     xs_f += dxdys_f;
         // }
 
-        // // determine if middle vertex is on left or right
-        // struct Vector2Int bottomToTop = subV2I(&screenVertices[0], &screenVertices[2]);
-        // struct Vector2Int bottomToMiddle = subV2I(&screenVertices[1], &screenVertices[2]);
-        // // ! TODO: implement this LOL
-        // if (crossV2I(&bottomToTop, &bottomToMiddle) > 0) {
-        //     // left
-        // }
-        // else {
-        //     // right
+        // // bottom short edge x and inv slope
+        // xs_f = to_float(v1.x);
+        // dxdys_f = to_float(v2.x - v1.x) / (v2.y - v1.y);
+
+        // // down the long edge and bottom short edge
+        // for (unsigned int y = v1.y; y <= v2.y; y++) {
+        //     unsigned int xl = to_int(xl_f);
+        //     unsigned int xs = to_int(xs_f);
+
+        //     if (xl > xs) { swap(xl, xs, int); }
+        //     fill_row(&screenData, xl, y, xs - xl + 1, 0x77);
+
+        //     xl_f += dxdyl_f;
+        //     xs_f += dxdys_f;
         // }
 
         // ------ WIREFRAME BRESENHAMS ------ //
 
-        // // render each edge
-        // for (int j = 0; j < 3; j++) {
-        //     struct Vector2Int v1 = screenVertices[j];
-        //     struct Vector2Int v2 = screenVertices[(j + 1) % 3];
-        //     int dy = v2.y - v1.y;
-        //     if (dy < 0) {
-        //         swap(v1, v2, struct Vector2Int);
-        //         dy = -dy;
-        //     }
+        // render each edge
+        for (int j = 0; j < 3; j++) {
+            struct Vector2Int v1 = screenVertices[j];
+            struct Vector2Int v2 = screenVertices[(j + 1) % 3];
+            int dy = v2.y - v1.y;
+            if (dy < 0) {
+                swap(v1, v2, struct Vector2Int);
+                dy = -dy;
+            }
 
-        //     // handle horizontal line edge case
-        //     if (dy == 0) {
-        //         fill_row(&screenData, ((v1.x < v2.x) ? v1.x : v2.x), v1.y, abs(v2.x - v1.x), 0xFFFFFF);
-        //         continue;
-        //     }
+            // handle horizontal line edge case
+            if (dy == 0) {
+                fill_row(&screenData, ((v1.x < v2.x) ? v1.x : v2.x), v1.y, abs(v2.x - v1.x), 0xFFFFFF);
+                continue;
+            }
 
-        //     int dx = v2.x - v1.x;
-        //     int adx = abs(dx), sx = (dx > 0) ? 1 : -1;
-        //     int x = v1.x, accum = 0;
+            int dx = v2.x - v1.x;
+            int adx = abs(dx), sx = (dx > 0) ? 1 : -1;
+            int x = v1.x, accum = 0;
 
-        //     for (int y = v1.y; y < v2.y; y++) {
-        //         write(&screenData, x, y, 0xFFFFFF);
-        //         accum += adx;
-        //         while (accum >= dy && dx != 0) {
-        //             accum -= dy;
-        //             x += sx;
-        //             write(&screenData, x, y, 0xFFFFFF);
-        //         }
-        //     }
-        // }
+            for (int y = v1.y; y < v2.y; y++) {
+                write(&screenData, x, y, 0xFFFFFF);
+                accum += adx;
+                while (accum >= dy && dx != 0) {
+                    accum -= dy;
+                    x += sx;
+                    write(&screenData, x, y, 0xFFFFFF);
+                }
+            }
+        }
     }
 
     while (!os_GetCSC());

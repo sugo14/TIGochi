@@ -10,17 +10,20 @@ struct ScreenData {
     // int screen[SCREEN_WIDTH][SCREEN_HEIGHT];
 };
 
-void write(struct ScreenData* screenData, int x, int y, int val) {
+static inline void write(struct ScreenData* screenData, int x, int y, int val) {
+    // if (x < 0 || x >= LCD_WIDTH) { return; }
+    // if (y < 0 || y >= LCD_HEIGHT) { return; }
+
     uint16_t* lcd_Ram_i = (uint16_t*)lcd_Ram;
     lcd_Ram_i += (y * SCREEN_WIDTH + x);
-    *lcd_Ram_i = 0x1;
+    *lcd_Ram_i = 0xFFFF;
 }
 
-void fill_row(struct ScreenData* screenData, int x, int y, int amt, int val) {
+void fill_row(struct ScreenData* screenData, int x, int y, int amt, uint16_t val) {
     uint16_t* lcd_Ram_i = (uint16_t*)lcd_Ram;
     lcd_Ram_i += (y * SCREEN_WIDTH + x);
     for (int i = 0; i < amt; i++) {
-        *lcd_Ram_i = 0x1;
+        *lcd_Ram_i = val;
         lcd_Ram_i++;
     }
 }

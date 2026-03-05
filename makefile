@@ -7,8 +7,8 @@ NAME = TIGotchi
 DESCRIPTION = "TI-84 CE Tamagotchi"
 COMPRESSED = NO
 
-CFLAGS = -Wall -Wextra -Oz # ! should i be using O3
-CXXFLAGS = -Wall -Wextra -Oz
+CFLAGS = -Wall -Wextra -O3 # ! should i be using O3
+CXXFLAGS = -Wall -Wextra -O3
 
 # modified settings
 ARCHIVED = YES # stores in archive instead of ram

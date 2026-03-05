@@ -45,6 +45,6 @@ struct Triangle {
 };
 
 struct Mesh {
-    struct Vector3 vertexList[3];
-    struct Triangle triangles[1];
+    struct Vector3 vertexList[8];
+    struct Triangle triangles[12];
 };
