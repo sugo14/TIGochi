@@ -20,11 +20,7 @@
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 
-/* Fill the screen with a given color */
-void FillScreen(uint8_t color)
-{
-    memset(lcd_Ram, color, LCD_SIZE);
-}
+void FillScreen(uint8_t color) { memset(lcd_Ram, color, LCD_SIZE); }
 
 // looks down +z
 // position is 0, 0, 0
