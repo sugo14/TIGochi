@@ -1,3 +1,5 @@
+#pragma once
+
 struct Vector2 {
     float x, y;
 };
@@ -45,6 +47,6 @@ struct Triangle {
 };
 
 struct Mesh {
-    struct Vector3 vertexList[8];
-    struct Triangle triangles[12];
+    struct Vector3 vertexList[VERT_CNT];
+    struct Triangle triangles[TRI_CNT];
 };

@@ -11,7 +11,7 @@ CFLAGS = -Wall -Wextra -O3 # ! should i be using O3
 CXXFLAGS = -Wall -Wextra -O3
 
 # modified settings
-ARCHIVED = YES # stores in archive instead of ram
+ARCHIVED = NO
 PREFER_OS_CRT = NO # might make program a little smaller
 # HAS_PRINTF = NO # -8 kb program size # ! OMG THIS LINE IS THE DEVIL
 

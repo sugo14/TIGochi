@@ -14,6 +14,7 @@
 #include <ti/real.h>
 #include <sys/timers.h>
 
+#include "model.h"
 #include "mesh.h"
 #include "screendata.h"
 
@@ -62,32 +63,6 @@ struct Camera camera = {
     LCD_WIDTH / LCD_HEIGHT
 };
 struct ScreenData screenData = {0};
-struct Mesh mesh = {
-	{
-		{1.000000, -1.000000, -1.000000},
-		{1.000000, -1.000000, 1.000000},
-		{-1.000000, -1.000000, 1.000000},
-		{-1.000000, -1.000000, -1.000000},
-		{1.000000, 1.000000, -1.000000},
-		{1.000000, 1.000000, 1.000000},
-		{-1.000000, 1.000000, 1.000000},
-		{-1.000000, 1.000000, -1.000000},
-	},
-	{
-		{1, 2, 3},
-		{7, 6, 5},
-		{4, 5, 1},
-		{5, 6, 2},
-		{2, 6, 7},
-		{0, 3, 7},
-		{0, 1, 3},
-		{4, 7, 5},
-		{0, 4, 1},
-		{1, 5, 2},
-		{3, 2, 7},
-		{4, 0, 7},
-	}
-};
 
 int main() {
     FillScreen(0x00);
@@ -98,14 +73,13 @@ int main() {
     // start clock
     clock_t start = clock();
     
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < TRI_CNT; i++) {
         struct Triangle* triangle = &mesh.triangles[i];
 
         // find vertex screen coordinates
         struct Vector2Int screenVertices[3];
         for (int j = 0; j < 3; j++) {
             struct Vector3 vertex = mesh.vertexList[triangle->vertexIndices[j]];
-            vertex.z += 5; // !!! TEMP
 
             // find plane of vertex
             struct Vector2 maxCoords = {

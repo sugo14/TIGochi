@@ -1,11 +1,15 @@
 # fragile awful abysmal evil script that should not have been created
 
-vertexes = []
-faces = []
+OBJ_NAME = "porygon"
+X_OFFSET = 0
+Y_OFFSET = -0.375
+Z_OFFSET = 1.0
 
-OBJ_NAME = "cube"
 OBJ_FILE = OBJ_NAME + ".obj"
 OUTPUT_FILE = OBJ_NAME + "_c.txt"
+
+vertexes = []
+faces = []
 
 with open(OBJ_FILE, 'r') as f:
     lines = f.readlines()
@@ -17,7 +21,11 @@ with open(OBJ_FILE, 'r') as f:
         line_split = line.split(" ")
         print(line_split)
         if line_split[0] == 'v':
-            vertexes.append([line_split[1].strip(), line_split[2].strip(), line_split[3].strip()])
+            vertexes.append([
+                float(line_split[1].strip()) + X_OFFSET,
+                float(line_split[2].strip()) + Y_OFFSET,
+                float(line_split[3].strip()) + Z_OFFSET
+            ])
         elif line_split[0] == 'f':
             face = []
             for i in range(1, 4):
@@ -26,7 +34,11 @@ with open(OBJ_FILE, 'r') as f:
             faces.append(face)
 
 with open(OUTPUT_FILE, 'w') as f:
-    f.write("struct Mesh " + OBJ_NAME + " = {\n")
+    f.write("#pragma once\n\n")
+    f.write("#define VERT_CNT " + str(len(vertexes)) + "\n")
+    f.write("#define TRI_CNT " + str(len(faces)) + "\n\n")
+    f.write("#include \"mesh.h\"\n\n")
+    f.write("struct Mesh mesh = {\n")
     f.write("\t{\n")
     for vertex in vertexes:
         f.write("\t\t{")
