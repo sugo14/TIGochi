@@ -9,6 +9,11 @@
 #include <sys/lcd.h>
 #include <sys/util.h>
 
+// timing stuff?
+#include <time.h>
+#include <ti/real.h>
+#include <sys/timers.h>
+
 #include "mesh.h"
 #include "screendata.h"
 
@@ -21,6 +26,28 @@
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 
 void FillScreen(uint8_t color) { memset(lcd_Ram, color, LCD_SIZE); }
+
+// from standalone_examples/stopwatch
+static void PrintTime(float elapsed)
+{
+    /* Float format for printf may be unimplemented, so go through an OS real */
+    real_t elapsed_real;
+
+    /* Max stopwatch value is (2^32 - 1) / 32768 = 131072.00, */
+    /* so create a buffer with room for 9 characters plus a null terminator */
+    char str[10];
+
+    /* If the elapsed time is small enough that the OS would print it using */
+    /* scientific notation, force it down to zero before conversion */
+    elapsed_real = os_FloatToReal(elapsed <= 0.001f ? 0.0f : elapsed);
+
+    /* Convert the elapsed time real to a string */
+    os_RealToStr(str, &elapsed_real, 8, 1, 2);
+
+    /* print the string */
+    os_SetCursorPos(0, 0);
+    os_PutStrFull(str);
+}
 
 // looks down +z
 // position is 0, 0, 0
@@ -67,6 +94,9 @@ int main() {
 
     float tanHalfFOV = tan(camera.halfFOV);
     float tanHalfFOVy = tan(camera.halfFOV / camera.aspectRatio);
+
+    // start clock
+    clock_t start = clock();
     
     for (int i = 0; i < 12; i++) {
         struct Triangle* triangle = &mesh.triangles[i];
@@ -237,6 +267,11 @@ int main() {
             }
         }
     }
+
+    // end and print clock
+    clock_t now = clock();
+    float elapsed = (float)(now - start) / CLOCKS_PER_SEC;
+    PrintTime(elapsed);
 
     while (!os_GetCSC());
 
