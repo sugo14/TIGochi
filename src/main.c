@@ -18,13 +18,13 @@
 #include "mesh.h"
 #include "screendata.h"
 
-#define swap(a, b, T) T tmp = a; a = b; b = tmp
+typedef uint24_t fixed_t;
+#define FIXED_BITSHIFT 12
+#define INT_TO_FIXED(a) ((a) << FIXED_BITSHIFT)
+#define FIXED_TO_INT(a) ((a) >> FIXED_BITSHIFT)
 
-#define float_bitshift 12
-#define to_float(a) ((a) << float_bitshift)
-#define to_int(a) ((a) >> float_bitshift)
-
-#define min(a, b) (((a) < (b)) ? (a) : (b))
+#define SWAP(a, b, T) T tmp = a; a = b; b = tmp
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 void FillScreen(uint8_t color) { memset(lcd_Ram, color, LCD_SIZE); }
 
@@ -164,82 +164,82 @@ int main() {
 
         // ------ SCANLINE RASTERIZATION ------ //
 
-        // // sort vertices from top to bottom
-        // struct Vector2Int v0 = screenVertices[0];
-        // struct Vector2Int v1 = screenVertices[1];
-        // struct Vector2Int v2 = screenVertices[2];
-        // if (v2.y < v1.y) { swap(v1, v2, struct Vector2Int); }
-        // if (v1.y < v0.y) { swap(v0, v1, struct Vector2Int); }
-        // if (v2.y < v1.y) { swap(v1, v2, struct Vector2Int); }
+        // sort vertices from top to bottom
+        struct Vector2Int v0 = screenVertices[0];
+        struct Vector2Int v1 = screenVertices[1];
+        struct Vector2Int v2 = screenVertices[2];
+        if (v2.y < v1.y) { SWAP(v1, v2, struct Vector2Int); }
+        if (v1.y < v0.y) { SWAP(v0, v1, struct Vector2Int); }
+        if (v2.y < v1.y) { SWAP(v1, v2, struct Vector2Int); }
 
-        // // long edge x and inv slope
-        // unsigned int xl_f = to_float(v0.x);
-        // unsigned int dxdyl_f = to_float(v2.x - v0.x) / (v2.y - v0.y);
+        // long edge x and inv slope
+        fixed_t xl_f = INT_TO_FIXED(v0.x);
+        fixed_t dxdyl_f = INT_TO_FIXED(v2.x - v0.x) / (v2.y - v0.y);
 
-        // // top short edge x and inv slope
-        // unsigned int xs_f = to_float(v0.x);
-        // unsigned int dxdys_f = to_float(v1.x - v0.x) / (v1.y - v0.y);
+        // top short edge x and inv slope
+        fixed_t xs_f = INT_TO_FIXED(v0.x);
+        fixed_t dxdys_f = INT_TO_FIXED(v1.x - v0.x) / (v1.y - v0.y);
 
-        // // down the long edge and top short edge
-        // for (unsigned int y = v0.y; y <= v1.y; y++) {
-        //     unsigned int xl = to_int(xl_f);
-        //     unsigned int xs = to_int(xs_f);
+        // down the long edge and top short edge
+        for (uint24_t y = v0.y; y <= v1.y; y++) {
+            uint24_t xl = FIXED_TO_INT(xl_f);
+            uint24_t xs = FIXED_TO_INT(xs_f);
 
-        //     if (xl > xs) { swap(xl, xs, int); }
-        //     fill_row(&screenData, xl, y, xs - xl + 1, 0x77);
+            if (xl > xs) { SWAP(xl, xs, int); }
+            fill_row(&screenData, xl, xs, y, 0x77);
 
-        //     xl_f += dxdyl_f;
-        //     xs_f += dxdys_f;
-        // }
+            xl_f += dxdyl_f;
+            xs_f += dxdys_f;
+        }
 
-        // // bottom short edge x and inv slope
-        // xs_f = to_float(v1.x);
-        // dxdys_f = to_float(v2.x - v1.x) / (v2.y - v1.y);
+        // bottom short edge x and inv slope
+        xs_f = INT_TO_FIXED(v1.x);
+        dxdys_f = INT_TO_FIXED(v2.x - v1.x) / (v2.y - v1.y);
 
-        // // down the long edge and bottom short edge
-        // for (unsigned int y = v1.y; y <= v2.y; y++) {
-        //     unsigned int xl = to_int(xl_f);
-        //     unsigned int xs = to_int(xs_f);
+        // down the long edge and bottom short edge
+        for (uint24_t y = v1.y; y <= v2.y; y++) {
+            uint24_t xl = FIXED_TO_INT(xl_f);
+            uint24_t xs = FIXED_TO_INT(xs_f);
 
-        //     if (xl > xs) { swap(xl, xs, int); }
-        //     fill_row(&screenData, xl, y, xs - xl + 1, 0x77);
+            if (xl > xs) { SWAP(xl, xs, int); }
+            fill_row(&screenData, xl, xs, y, 0x77);
 
-        //     xl_f += dxdyl_f;
-        //     xs_f += dxdys_f;
-        // }
+            xl_f += dxdyl_f;
+            xs_f += dxdys_f;
+        }
 
         // ------ WIREFRAME BRESENHAMS ------ //
 
-        // render each edge
-        for (int j = 0; j < 3; j++) {
-            struct Vector2Int v1 = screenVertices[j];
-            struct Vector2Int v2 = screenVertices[(j + 1) % 3];
-            int dy = v2.y - v1.y;
-            if (dy < 0) {
-                swap(v1, v2, struct Vector2Int);
-                dy = -dy;
-            }
+        // // render each edge
+        // for (int j = 0; j < 3; j++) {
+        //     struct Vector2Int v1 = screenVertices[j];
+        //     struct Vector2Int v2 = screenVertices[(j + 1) % 3];
+        //     int dy = v2.y - v1.y;
+        //     if (dy < 0) {
+        //         swap(v1, v2, struct Vector2Int);
+        //         dy = -dy;
+        //     }
 
-            // handle horizontal line edge case
-            if (dy == 0) {
-                fill_row(&screenData, ((v1.x < v2.x) ? v1.x : v2.x), v1.y, abs(v2.x - v1.x), 0xFFFFFF);
-                continue;
-            }
+        //     // handle horizontal line edge case
+        //     if (dy == 0) {
+        //         fill_row(&screenData, ((v1.x < v2.x) ? v1.x : v2.x), v1.y, abs(v2.x - v1.x), 0xFFFFFF);
+        //         continue;
+        //     }
 
-            int dx = v2.x - v1.x;
-            int adx = abs(dx), sx = (dx > 0) ? 1 : -1;
-            int x = v1.x, accum = 0;
+        //     int dx = v2.x - v1.x;
+        //     int adx = abs(dx), sx = (dx > 0) ? 1 : -1;
+        //     int x = v1.x, accum = 0;
 
-            for (int y = v1.y; y < v2.y; y++) {
-                write(&screenData, x, y, 0xFFFFFF);
-                accum += adx;
-                while (accum >= dy && dx != 0) {
-                    accum -= dy;
-                    x += sx;
-                    write(&screenData, x, y, 0xFFFFFF);
-                }
-            }
-        }
+        //     for (int y = v1.y; y < v2.y; y++) {
+        //         write(&screenData, x, y, 0xFFFFFF);
+        //         accum += adx;
+        //         while (accum >= dy && dx != 0) {
+        //             accum -= dy;
+        //             x += sx;
+        //             write(&screenData, x, y, 0xFFFFFF);
+        //         }
+        //     }
+        // }
     }
 
     // end and print clock

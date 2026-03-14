@@ -1,8 +1,5 @@
 #include <stdlib.h>
 
-// for text
-// #define SCREEN_WIDTH 60
-// #define SCREEN_HEIGHT 15
 #define SCREEN_WIDTH LCD_WIDTH
 #define SCREEN_HEIGHT LCD_HEIGHT
 
@@ -19,10 +16,10 @@ static inline void write(struct ScreenData* screenData, int x, int y, int val) {
     *lcd_Ram_i = 0xFFFF;
 }
 
-void fill_row(struct ScreenData* screenData, int x, int y, int amt, uint16_t val) {
+static inline void fill_row(struct ScreenData* screenData, int xStart, int xEnd, int y, uint16_t val) {
     uint16_t* lcd_Ram_i = (uint16_t*)lcd_Ram;
-    lcd_Ram_i += (y * SCREEN_WIDTH + x);
-    for (int i = 0; i < amt; i++) {
+    lcd_Ram_i += (y * SCREEN_WIDTH + xStart);
+    for (int i = xStart; i <= xEnd; i++) {
         *lcd_Ram_i = val;
         lcd_Ram_i++;
     }
